@@ -1,6 +1,6 @@
 # Thermohydraulique 2D couplee a conduction 2D #
 # PARALLEL OK  #
-dimension 2
+xyuifd dimension 2
 
 Domaine dom_fluid
 # BEGIN MESH #

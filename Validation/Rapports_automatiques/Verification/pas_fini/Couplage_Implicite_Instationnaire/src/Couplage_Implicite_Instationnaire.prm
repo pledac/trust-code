@@ -1,5 +1,5 @@
 Parameters {
-	Title "Coupled pipe flow with non stationnary conduction solved by an implicit scheme."
+	Title "ADRIENled pipe flow with non stationnary conduction solved by an implicit scheme."
 	Description "Check of the heat balances."
 	Author "P. LEDAC (CS)"	
 	VersionTrio_U "1.6.6"
