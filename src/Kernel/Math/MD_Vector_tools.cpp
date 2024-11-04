@@ -23,11 +23,11 @@
 #include <TRUSTTrav.h>
 #include <vector>
 
-static Schema_Comm_Vecteurs comm;
-static MD_Vector last_md;
-static int last_isdouble = -1;
-static int last_linesize = 0;
-static Echange_EV_Options last_opt;
+Schema_Comm_Vecteurs MD_Vector_tools::comm;
+MD_Vector MD_Vector_tools::last_md;
+int MD_Vector_tools::last_isdouble = -1;
+int MD_Vector_tools::last_linesize = 0;
+Echange_EV_Options MD_Vector_tools::last_opt;
 
 
 class MD_Vector_renumber
@@ -126,7 +126,7 @@ void MD_Vector_tools::creer_tableau_distribue(const MD_Vector& md, Array_base& v
 }
 
 template <typename _TYPE_>
-void echange_espace_virtuel_(const MD_Vector& md, TRUSTVect<_TYPE_>& v, const Echange_EV_Options& opt = echange_ev_opt_default)
+void MD_Vector_tools::echange_espace_virtuel_(const MD_Vector& md, TRUSTVect<_TYPE_>& v, const Echange_EV_Options& opt)
 {
   const MD_Vector_base& mdv = md.valeur();
   const int is_double = (std::is_same<_TYPE_,double>::value) ? 1 : 0;
@@ -151,7 +151,7 @@ void echange_espace_virtuel_(const MD_Vector& md, TRUSTVect<_TYPE_>& v, const Ec
 }
 
 template<typename _TYPE_>
-void echange_espace_virtuel1_(const MD_Vector& md, TRUSTVect<_TYPE_>& v, MD_Vector_tools::Operations_echange opt)
+void MD_Vector_tools::echange_espace_virtuel1_(const MD_Vector& md, TRUSTVect<_TYPE_>& v, MD_Vector_tools::Operations_echange opt)
 {
   switch(opt)
     {
@@ -178,7 +178,7 @@ void echange_espace_virtuel1_(const MD_Vector& md, TRUSTVect<_TYPE_>& v, MD_Vect
 }
 
 template<typename _TYPE_>
-inline void call_echange_espace_virtuel(TRUSTVect<_TYPE_>& v, MD_Vector_tools::Operations_echange opt)
+inline void MD_Vector_tools::call_echange_espace_virtuel(TRUSTVect<_TYPE_>& v, MD_Vector_tools::Operations_echange opt)
 {
   if (v.get_md_vector().non_nul())
     {
