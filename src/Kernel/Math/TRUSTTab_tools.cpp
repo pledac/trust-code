@@ -49,46 +49,49 @@ void local_max_abs_tab_kernel(const TRUSTTab<_TYPE_,_SIZE_>& tableau, TRUSTArray
                               const TRUSTArray<int,_SIZE_>& blocs, const int lsize)
 {
   auto tableau_view= tableau.template view_ro<ExecSpace>();
-  auto max_colonne_view= max_colonne.template view_rw<ExecSpace>();
+  auto max_colonne_view= max_colonne.template view_wo<ExecSpace>();
 
+  //Note from Rémi: if this kernel is slow, we might consider hirarchical parallelism
+  //Or switching the // for to the inner loop
   const _SIZE_ nblocs = blocs.size_array() >> 1;
   for (_SIZE_ ibloc = 0; ibloc < nblocs; ibloc++)
     {
       const _SIZE_ begin_bloc = blocs[ibloc], end_bloc = blocs[ibloc+1];
-      // Define a Kokkos range policy based on the execution space
-      Kokkos::RangePolicy<ExecSpace> policy(begin_bloc, end_bloc);
-      // Parallel loop for any value of lsize, using atomic_max for thread safety
-      Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), policy, KOKKOS_LAMBDA(const int i)
-      {
-        for (int j = 0; j < lsize; j++)
+      if (begin_bloc<end_bloc) // very important: empty bloc at the end would erase max_colonne
+        {
+          Kokkos::RangePolicy<ExecSpace> policy(0, lsize);
+          Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__),
+                               policy,
+                               KOKKOS_LAMBDA(const int j)
           {
-            const _TYPE_ x = Kokkos::fabs(tableau_view(i,j));
-            Kokkos::atomic_max(&max_colonne_view(j), x);
-          }
-      });
+            _TYPE_ local_max=0;
+            for (int i = begin_bloc; i < end_bloc ; i++)
+              {
+                const _TYPE_ x = Kokkos::fabs(tableau_view(i,j));
+                local_max = Kokkos::fmax(local_max, x);
+              }
+            max_colonne_view(j)=local_max;
+          });
+        }
     }
+}
+}
 
-  bool kernelOnDevice = is_default_exec_space<ExecSpace>;
-  end_gpu_timer(kernelOnDevice, __KERNEL_NAME__);
-}
-}
 
 template <typename _TYPE_, typename _SIZE_>
 void local_max_abs_tab(const TRUSTTab<_TYPE_,_SIZE_>& tableau, TRUSTArray<_TYPE_,_SIZE_>& max_colonne)
 {
-  max_colonne = std::numeric_limits<_TYPE_>::min();
   const TRUSTArray<int,_SIZE_>& blocs = tableau.get_md_vector()->get_items_to_compute();
   const _SIZE_ lsize = tableau.line_size();
-  for (_SIZE_ j = 0; j < lsize; j++) max_colonne[j] = 0;
   assert(lsize == max_colonne.size_array());
 
   bool kernelOnDevice = tableau.checkDataOnDevice();
 
+  std::cout<<"KernelOnDevice"<<kernelOnDevice<<std::endl;
   if (kernelOnDevice)
     local_max_abs_tab_kernel<Kokkos::DefaultExecutionSpace, _TYPE_, _SIZE_>(tableau, max_colonne, blocs, lsize);
   else
     local_max_abs_tab_kernel<Kokkos::DefaultHostExecutionSpace, _TYPE_, _SIZE_>(tableau, max_colonne, blocs, lsize);
-
 }
 template void local_carre_norme_tab<double,int>(const TRUSTTab<double,int>& tableau, TRUSTArray<double,int>& norme_colonne);
 template void local_carre_norme_tab<float,int>(const TRUSTTab<float,int>& tableau, TRUSTArray<float,int>& norme_colonne);
