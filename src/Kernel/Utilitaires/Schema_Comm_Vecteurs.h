@@ -63,7 +63,7 @@ public:
 
   void end_init();
   void begin_comm(bool bufferOnDevice=false);
-  void exchange(bool bufferOnDevice=false);
+  void exchange();
   void end_comm();
 
   static void CleanMyStaticViews();
@@ -86,6 +86,8 @@ protected:
   int sorted_ = 1;
   // Taille du buffer requis pour ce schema
   int min_buf_size_ = -1;
+  // Buffer packing/uncpacking on device:
+  bool bufferOnDevice_ = false;
   // Support GPU par MPI:
   bool use_gpu_aware_mpi_ = false;
 
@@ -208,6 +210,7 @@ inline ArrOfInt& Schema_Comm_Vecteurs::get_next_area_template<int>(int pe, int s
   // attention a l'arithmetique de pointeurs, ajout d'une taille en octets
   sdata_.buf_pointers_[pe] += BLOCSIZE_INT(size);
   tmp_area_int_.ref_data(bufptr, size);
+  tmp_area_int_.set_data_location(bufferOnDevice_ ? DataLocation::Device : DataLocation::HostOnly);
   return tmp_area_int_;
 }
 
@@ -220,6 +223,7 @@ inline ArrOfDouble& Schema_Comm_Vecteurs::get_next_area_template<double>(int pe,
   // attention a l'arithmetique de pointeurs, ajout d'une taille en octets
   sdata_.buf_pointers_[pe] += BLOCSIZE_DOUBLE(size);
   tmp_area_double_.ref_data(bufptr, size);
+  tmp_area_double_.set_data_location(bufferOnDevice_ ? DataLocation::Device : DataLocation::HostOnly);
   if (check_comm_vector)
     {
 #ifndef NDEBUG
@@ -240,6 +244,7 @@ inline ArrOfFloat& Schema_Comm_Vecteurs::get_next_area_template<float>(int pe, i
   // attention a l'arithmetique de pointeurs, ajout d'une taille en octets
   sdata_.buf_pointers_[pe] += BLOCSIZE_FLOAT(size);
   tmp_area_float_.ref_data(bufptr, size);
+  tmp_area_float_.set_data_location(bufferOnDevice_ ? DataLocation::Device : DataLocation::HostOnly);
   return tmp_area_float_;
 }
 

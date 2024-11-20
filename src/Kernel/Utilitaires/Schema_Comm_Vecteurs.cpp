@@ -220,13 +220,14 @@ void Schema_Comm_Vecteurs::begin_comm(bool bufferOnDevice)
     }
   buffer_locked_ = 1;
   status_ = BEGIN_COMM;
+  bufferOnDevice_ = bufferOnDevice;
 }
 
-void Schema_Comm_Vecteurs::exchange(bool bufferOnDevice)
+void Schema_Comm_Vecteurs::exchange()
 {
   char * ptr = sdata_.buffer_base_;
   // Copy buffer before MPI send
-  if (bufferOnDevice)
+  if (bufferOnDevice_)
     {
       if (!use_gpu_aware_mpi_)
         copyFromDevice(sdata_.buffer_base_, min_buf_size_, "buffer_base_"); // Copy buffer to host for MPI communication
@@ -284,7 +285,7 @@ void Schema_Comm_Vecteurs::exchange(bool bufferOnDevice)
   status_ = EXCHANGED;
 
   // Copy buffer to device after MPI recv if GPU-Aware MPI is not enabled:
-  if (bufferOnDevice && !use_gpu_aware_mpi_) copyToDevice(sdata_.buffer_base_, min_buf_size_, "buffer_base_");
+  if (bufferOnDevice_ && !use_gpu_aware_mpi_) copyToDevice(sdata_.buffer_base_, min_buf_size_, "buffer_base_");
 }
 
 void Schema_Comm_Vecteurs::end_comm()
@@ -294,6 +295,7 @@ void Schema_Comm_Vecteurs::end_comm()
   assert(check_buffers_full());
   status_ = END_INIT; // pret pour un nouveau begin_comm()
   buffer_locked_ = 0;
+  bufferOnDevice_ = false;
 }
 
 /*! @brief Selon status_, verifie que tous les pointeurs de buffers pointent a la fin du buffer aloue pour chaque processeur en emission
