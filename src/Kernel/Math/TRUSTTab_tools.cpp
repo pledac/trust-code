@@ -17,10 +17,10 @@
 #include <TRUSTTab_tools.tpp>
 #include <limits>
 
-// ToDo OpenMP: porter boucle mais mp_norme_tab semble pas utilise
 template <typename _TYPE_, typename _SIZE_>
 void local_carre_norme_tab(const TRUSTTab<_TYPE_,_SIZE_>& tableau, TRUSTArray<_TYPE_,_SIZE_>& norme_colonne)
 {
+  ToDo_Kokkos("");
   norme_colonne = 0.;
   const TRUSTArray<int,_SIZE_>& blocs = tableau.get_md_vector()->get_items_to_sum();
   const _SIZE_ nblocs = blocs.size_array() >> 1;
@@ -72,6 +72,7 @@ void local_max_abs_tab_kernel(const TRUSTTab<_TYPE_,_SIZE_>& tableau, TRUSTArray
               }
             max_colonne_view(j)=local_max;
           });
+          end_gpu_timer(Objet_U::computeOnDevice, __KERNEL_NAME__);
         }
     }
 }
@@ -87,7 +88,6 @@ void local_max_abs_tab(const TRUSTTab<_TYPE_,_SIZE_>& tableau, TRUSTArray<_TYPE_
 
   bool kernelOnDevice = tableau.checkDataOnDevice();
 
-  std::cout<<"KernelOnDevice"<<kernelOnDevice<<std::endl;
   if (kernelOnDevice)
     local_max_abs_tab_kernel<Kokkos::DefaultExecutionSpace, _TYPE_, _SIZE_>(tableau, max_colonne, blocs, lsize);
   else
