@@ -18,7 +18,6 @@
 
 #include <TRUSTArray.h>
 
-// Methodes de verification que le tableau est a jour sur le host:
 // ToDo OpenMP :Appels couteux (car non inlines?) depuis operator()[int] mais comment faire mieux ?
 template<typename _TYPE_, typename _SIZE_>
 inline void TRUSTArray<_TYPE_,_SIZE_>::ensureDataOnHost() const
@@ -29,6 +28,9 @@ inline void TRUSTArray<_TYPE_,_SIZE_>::ensureDataOnHost() const
 #endif
 }
 
+/**
+ * @brief Ensure the array data is up to date on the host, else perform a copy to host *
+ */
 template<typename _TYPE_, typename _SIZE_>
 inline void TRUSTArray<_TYPE_,_SIZE_>::ensureDataOnHost()
 {
@@ -42,7 +44,9 @@ inline void TRUSTArray<_TYPE_,_SIZE_>::ensureDataOnHost()
 #endif
 }
 
-// Fonction pour connaitre la localisation du tableau
+/**
+ * @brief Checks if the array data is up to date on the device *
+ */
 template<typename _TYPE_, typename _SIZE_>
 inline bool TRUSTArray<_TYPE_,_SIZE_>::isDataOnDevice() const
 {
@@ -50,9 +54,9 @@ inline bool TRUSTArray<_TYPE_,_SIZE_>::isDataOnDevice() const
   return loc == DataLocation::Device || loc == DataLocation::HostDevice;
 }
 
-// Fonctions checkDataOnDevice pour lancement conditionnel de kernels sur le device:
-// -Si les tableaux passes en parametre sont sur a jour sur le device
-// -Si ce n'est pas le cas, les tableaux sont copies sur le host via ensureDataOnHost
+/**
+ * @brief Return true if the array data is up to date on the device, else perform a copy to host *
+ */
 template<typename _TYPE_, typename _SIZE_>
 inline bool TRUSTArray<_TYPE_,_SIZE_>::checkDataOnDevice() const
 {
@@ -68,6 +72,9 @@ inline bool TRUSTArray<_TYPE_,_SIZE_>::checkDataOnDevice() const
 #endif
 }
 
+/**
+ * @brief Return true if the array data is up to date on the device, else perform a copy to host *
+ */
 template<typename _TYPE_, typename _SIZE_>
 inline bool TRUSTArray<_TYPE_,_SIZE_>::checkDataOnDevice()
 {
@@ -83,6 +90,9 @@ inline bool TRUSTArray<_TYPE_,_SIZE_>::checkDataOnDevice()
 #endif
 }
 
+/**
+ * @brief Return true if the array data is up to date on the device *
+ */
 template<typename _TYPE_, typename _SIZE_>
 inline bool TRUSTArray<_TYPE_,_SIZE_>::checkDataOnDevice(const TRUSTArray& tab_const)
 {

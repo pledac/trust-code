@@ -178,18 +178,28 @@ bool isAllocatedOnDevice(_TYPE_* tab_addr)
 #endif
 }
 
+/**
+ * @brief Checks if a TRUSTArray is allocated on a device (GPU)
+ *
+ * @param tab Reference to the TRUSTArray to check
+ *
+ * @return true if the array is allocated on device
+ * @return false if the array is not allocated on device or OpenMP target is not enabled
+ */
 template <typename _TYPE_, typename _SIZE_=int>
 bool isAllocatedOnDevice(TRUSTArray<_TYPE_,_SIZE_>& tab)
 {
 #ifdef _OPENMP_TARGET
-  bool isAllocatedOnDevice1 = (tab.get_data_location() != DataLocation::HostOnly);
-  bool isAllocatedOnDevice2 = isAllocatedOnDevice(tab.data());
-  if (isAllocatedOnDevice1!=isAllocatedOnDevice2) Process::exit("isAllocatedOnDevice(TRUSTArray<_TYPE_>& tab) error! Seems tab.get_data_location() is not up-to-date !");
-  return isAllocatedOnDevice2;
+  bool flag_loc = (tab.get_data_location() != DataLocation::HostOnly);
+  bool flag_ptr = isAllocatedOnDevice(tab.data());
+  if (flag_loc!=flag_ptr) Process::exit("isAllocatedOnDevice(TRUSTArray<_TYPE_>& tab) error! Seems tab.get_data_location() is not up-to-date !");
+  return flag_loc;
 #else
   return false;
 #endif
 }
+template <typename _TYPE_, typename _SIZE_=int>
+bool isAllocatedOnDevice(const TRUSTArray<_TYPE_,_SIZE_>& tab) { return isAllocatedOnDevice(const_cast<TRUSTArray<_TYPE_>&>(tab)); }
 
 template <typename _TYPE_, typename _SIZE_=int>
 extern void deleteOnDevice(TRUSTArray<_TYPE_,_SIZE_>& tab);
