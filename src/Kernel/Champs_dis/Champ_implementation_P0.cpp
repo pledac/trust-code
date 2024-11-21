@@ -57,58 +57,58 @@ double Champ_implementation_P0::valeur_a_elem_compo(const DoubleVect& position, 
   return result;
 }
 
-DoubleTab& Champ_implementation_P0::valeur_aux_elems(const DoubleTab& positions, const IntVect& polys, DoubleTab& result) const
+DoubleTab& Champ_implementation_P0::valeur_aux_elems(const DoubleTab& positions, const IntVect& tab_polys, DoubleTab& tab_result) const
 {
-  const Champ_base& ch_base = le_champ();
-  int nb_components = ch_base.nb_comp();
-  const DoubleTab& values = ch_base.valeurs();
-  int nb_polys = polys.size();
-
+  int nb_polys = tab_polys.size();
   if (nb_polys == 0)
-    return result;
+    return tab_result;
+
+  int nb_components = le_champ().nb_comp();
+  const DoubleTab& tab_values = le_champ().valeurs();
 
   // TODO : FIXME
   // For FT the resize should be done in its good position and not here ...
-  if (result.nb_dim() == 1) result.resize(nb_polys, 1);
+  if (tab_result.nb_dim() == 1) tab_result.resize(nb_polys, 1);
 
-  assert(values.line_size() == nb_components);
-  assert(result.line_size() == nb_components || nb_components == 1);
-  ToDo_Kokkos("critical");
-  for (int i = 0; i < nb_polys; i++)
-    {
-      int cell = polys(i);
-      assert(cell < values.dimension_tot(0));
-
-      for (int j = 0; j < result.line_size(); j++)
-        if (cell != -1)
-          result(i, j) = values.nb_dim() == 1 ? values(cell) : values(cell, (result.line_size() == nb_components) * j); // Some post-processed fields can have nb_dim() == 1
-    }
-
-  return result;
+  assert(tab_values.line_size() == nb_components);
+  assert(tab_values.line_size() == nb_components || nb_components == 1);
+  int line_size = tab_result.line_size();
+  int nb_dim = tab_values.nb_dim();
+  CIntArrView polys = tab_polys.view_ro();
+  CDoubleTabView values = tab_values.view_ro();
+  DoubleTabView result = tab_result.view_wo();
+  Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), nb_polys, KOKKOS_LAMBDA(const int i)
+  {
+    int cell = polys(i);
+    if (cell>=0)
+      for (int j = 0; j < line_size; j++)
+        result(i, j) = nb_dim == 1 ? values(cell, 0) : values(cell, (line_size == nb_components) * j); // Some post-processed fields can have nb_dim() == 1
+  });
+  end_gpu_timer(Objet_U::computeOnDevice, __KERNEL_NAME__);
+  return tab_result;
 }
 
-DoubleVect& Champ_implementation_P0::valeur_aux_elems_compo(const DoubleTab& positions, const IntVect& polys, DoubleVect& result, int ncomp) const
+DoubleVect& Champ_implementation_P0::valeur_aux_elems_compo(const DoubleTab& positions, const IntVect& tab_polys, DoubleVect& tab_result, int ncomp) const
 {
-  const Champ_base& ch_base = le_champ();
-  const DoubleTab& values = ch_base.valeurs();
-
-  int nb_polys = polys.size();
+  const DoubleTab& tab_values = le_champ().valeurs();
+  int nb_polys = tab_polys.size();
 
   assert(ncomp >= 0);
-  assert(ncomp < ch_base.nb_comp());
-  assert(result.size() == nb_polys);
+  assert(ncomp < le_champ().nb_comp());
+  assert(tab_result.size() == nb_polys);
+  assert(tab_values.line_size() == le_champ().nb_comp());
 
-  assert(values.line_size() == ch_base.nb_comp());
-  ToDo_Kokkos("critical");
-  for (int i = 0; i < nb_polys; i++)
-    {
-      int cell = polys(i);
-      assert(cell < values.dimension_tot(0));
-      if (cell != -1) result(i) = values(cell, ncomp);
-      // result(i) = (cell == -1) ? 0 : values(cell,ncomp);
-    }
-
-  return result;
+  CIntArrView polys = tab_polys.view_ro();
+  CDoubleTabView values = tab_values.view_ro();
+  DoubleArrView result = tab_result.view_wo();
+  Kokkos::parallel_for(start_gpu_timer(__KERNEL_NAME__), nb_polys, KOKKOS_LAMBDA(const int i)
+  {
+    int cell = polys(i);
+    if (cell>=0)
+      result(i) = values(cell, ncomp);
+  });
+  end_gpu_timer(Objet_U::computeOnDevice, __KERNEL_NAME__);
+  return tab_result;
 }
 
 DoubleTab& Champ_implementation_P0::remplir_coord_noeuds(DoubleTab& positions) const
